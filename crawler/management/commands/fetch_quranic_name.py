@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     TOTAL_PAGES = 315
 
-    BASE_URL = "https://quranicnames.com/all-baby-names/page/"
+    BASE_URL = "https://quranicnames.com/all-baby-names/page"
 
     def add_arguments(self, parser) -> None:
         return super().add_arguments(parser)
