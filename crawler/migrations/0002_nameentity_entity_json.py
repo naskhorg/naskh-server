@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="nameentity",
-            name="entity_json",
+            name="details",
             field=models.TextField(default=""),
         ),
     ]

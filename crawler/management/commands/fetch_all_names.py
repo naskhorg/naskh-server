@@ -27,7 +27,7 @@ class Command(BaseCommand):
             posts = soup.select('#catsdiv > div[id^="post-"]')
             for post in posts:
                 anchor = post.find("a")
-                category = anchor.get("class")
+                category = anchor.get("class").text
                 link = anchor.get("href")
                 name = anchor.select_one(
                     ".entry-title-area h2.entry-title"

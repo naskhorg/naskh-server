@@ -10,79 +10,48 @@ class Command(BaseCommand):
 
     help = "Crawl name description from quranic names website"
 
-    def build_entity_json(self, html):
-        parsed_data = {
-            "short_meaning": None,
-            "arabic_name": None,
-            "quranic_nature": None,
-            "alternate_spellings": [],
-            "root_link": None,
-            "root_name": None,
-        }
-        # 1. Find div with class "entry-content"
+    def get_details(self, html):
+        entity_json = {}
         entry_content_div = html.find("div", class_="entry-content")
-        if entry_content_div:
-            # 2. Within "entry-content", find the div with class "artwork-meta-div"
-            artwork_meta_div = entry_content_div.find("div", class_="artwork-meta-div")
-            if artwork_meta_div:
-                # Fetch tbody and its td for short_meaning
-                short_meaning_td = (
-                    artwork_meta_div.find("tbody").find("td")
-                    if artwork_meta_div.find("tbody")
-                    else None
-                )
-                parsed_data["short_meaning"] = (
-                    short_meaning_td.get_text(strip=True) if short_meaning_td else None
-                )
-
-            # 3. Get arabic_name from first tr with class "tr1"
-            tr1 = (
-                artwork_meta_div.find("tr", class_="tr1") if artwork_meta_div else None
-            )
-            arabic_name_td = tr1.find("td") if tr1 else None
-            parsed_data["arabic_name"] = (
-                arabic_name_td.get_text(strip=True) if arabic_name_td else None
-            )
-
-            # 4. Get quranic_nature from second tr with class "tr2"
-            tr2_list = (
-                artwork_meta_div.find_all("tr", class_="tr2")
-                if artwork_meta_div
-                else []
-            )
-            if len(tr2_list) > 0:
-                quranic_nature_td = tr2_list[0].find("td")
-                parsed_data["quranic_nature"] = (
-                    quranic_nature_td.get_text(strip=True)
-                    if quranic_nature_td
-                    else None
-                )
-
-                # 5. Get alternate spellings from spans in the second tr with class "tr2"
-                alternate_spellings_spans = tr2_list[0].find_all("span")
-                parsed_data["alternate_spellings"] = [
-                    span.get_text(strip=True) for span in alternate_spellings_spans
-                ]
-
-            # 6. Get root_link and root_name from second tr with class "tr2" and id "root-info"
-            root_info_tr = (
-                artwork_meta_div.find("tr", class_="tr2", id="root-info")
-                if artwork_meta_div
-                else None
-            )
-            if root_info_tr:
-                root_td = root_info_tr.find("td")
-                root_a = root_td.find("a") if root_td else None
-                if root_a:
-                    parsed_data["root_link"] = root_a["href"]
-                    parsed_data["root_name"] = root_a.get_text(strip=True)
-
-            return parsed_data
+        artwork_meta_div = entry_content_div.find("div", id="artwork-meta-div")
+        short_meaning_td = artwork_meta_div.find("tbody").find("td")
+        entity_json["short_meaning"] = short_meaning_td.contents[0].strip()
+        entity_json["arabic_name"] = artwork_meta_div.find(
+            "td", class_="arspelling"
+        ).get_text(strip=True)
+        tr2_list = artwork_meta_div.find_all("tr", class_="tr2")
+        if len(tr2_list) > 0:
+            entity_json["quranic_nature"] = tr2_list[1].find("td").get_text(strip=True)
+            entity_json["alternate_spellings"] = [
+                {span.get_text(strip=True): span.find("a")["href"]}
+                for span in tr2_list[2].find_all("span")
+            ]
+        root_a = (
+            artwork_meta_div.find("tr", class_="tr2", id="root-info")
+            .find("td")
+            .find("a")
+        )
+        root_list = (
+            artwork_meta_div.find("tr", class_="tr2", id="root-info")
+            .find("td")
+            .find("div")
+            .find_all("a")
+        )
+        entity_json["root_link"] = root_a["href"]
+        entity_json["root_type"] = root_a.get_text(strip=True)
+        entity_json["root_list"] = [
+            {root_obj.text: root_obj["href"]} for root_obj in root_list
+        ]
+        entity_json['description'] =
+        return entity_json
 
     def handle(self, *args, **options):
-        names = NameEntity.objects.filter(link="https://quranicnames.com/zaida/")
+        names = NameEntity.objects.all()
         for name in names:
+            print(name)
             body = requests.get(name.link).text
             html = BeautifulSoup(body, "html.parser")
-            response = self.build_entity_json(html)
-            print(response)
+            details = self.get_details(html)
+            instance = NameEntity.objects.get(id=name.id)
+            instance.details = details
+            instance.save()
