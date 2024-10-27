@@ -1,6 +1,10 @@
 from django.db import models
 
-class Post(models.Model):
-    name = models.Text()
-    category = models.Text()
-    link = models.Text()
+
+class NameEntity(models.Model):
+    name = models.CharField(max_length=255)
+    link = models.URLField()
+    category = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f'{self.name}:{self.link}:{self.category}'

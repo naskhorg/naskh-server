@@ -1,3 +1,4 @@
 from django.contrib import admin
+from crawler.models import NameEntity
 
-# Register your models here.
+admin.site.register(NameEntity)
