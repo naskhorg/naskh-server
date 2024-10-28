@@ -27,12 +27,12 @@ class Command(BaseCommand):
             posts = soup.select('#catsdiv > div[id^="post-"]')
             for post in posts:
                 anchor = post.find("a")
-                category = anchor.get("class").text
+                category = anchor.get("class")[0]
                 link = anchor.get("href")
                 name = anchor.select_one(
                     ".entry-title-area h2.entry-title"
                 ).text.strip()
-                instance = NameEntity.objects.create(
+                instance = NameEntity.objects.get_or_create(
                     name=name,
                     link=link,
                     category=category,
@@ -43,4 +43,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         for page_number in range(self.TOTAL_PAGES):
+            print(page_number)
             self.fetch(page_number)
