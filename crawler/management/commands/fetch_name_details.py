@@ -99,11 +99,34 @@ class Command(BaseCommand):
         with ThreadPoolExecutor(max_workers=20) as executor:
             list(executor.map(self.update_name_details, names))
 
+    def parse_remaining(self, body):
+        try:
+            html = BeautifulSoup(body, "html.parser")
+            category = html.find("h3").get_text(strip=True)
+            short_meaning = ""
+            if html.find("h4"):
+                short_meaning = html.find("h4").get_text(strip=True)
+            description = html.find(id="variant-div").find("p").get_text(strip=True)
+            verses = [
+                blockquote.get_text(strip=True)
+                for blockquote in html.find_all("blockquote")
+            ]
+            return {
+                "category": category.split(" ")[-1].strip(),
+                "short_meaning": short_meaning,
+                "description": description,
+                "verses": verses,
+            }
+        except Exception as e:
+            print(e)
+
     def parse_cdn_link(self, body):
         try:
             html = BeautifulSoup(body, "html.parser")
             category = html.find("h3").get_text(strip=True)
-            short_meaning = html.find("h4").get_text(strip=True)
+            short_meaning = ""
+            if html.find("h4"):
+                short_meaning = html.find("h4").get_text(strip=True)
             all_ps = html.find(id="variant-div").find_all("p")
             description = all_ps[2].get_text(strip=True)
             verses = [
@@ -117,14 +140,29 @@ class Command(BaseCommand):
                 "verses": verses,
             }
         except Exception as e:
-            return self.get_details(body)
+            print(e)
+
+    def parse_staff_answers(self, body):
+        try:
+            html = BeautifulSoup(body, "html.parser")
+            description = (
+                html.find("div", class_="entry-content")
+                .find_all("p")[1]
+                .get_text(strip=True)
+            )
+            return {
+                "description": description,
+            }
+        except Exception as e:
+            print(e)
 
     def update_name_details(self, name):
-        print(name.link)
         body = requests.get(name.link).text
-        details = self.parse_cdn_link(body)
-        print(details)
+        details = self.get_details(body)
+        if not details:
+            return
         updated = NameEntity.objects.get(id=name.id)
+        updated.category = details.get("category", "")
         updated.description = details.get("description", "")
         updated.short_meaning = details.get("short_meaning", "")
         updated.arabic_name = details.get("arabic_name", "")
