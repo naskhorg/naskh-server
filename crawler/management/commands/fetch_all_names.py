@@ -43,5 +43,4 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         for page_number in range(self.TOTAL_PAGES):
-            print(page_number)
             self.fetch(page_number)

@@ -8,7 +8,7 @@ QURANIC_NATURE = {
 
 class NameEntity(models.Model):
     name = models.CharField(max_length=255)
-    link = models.URLField(unique=True)
+    link = models.URLField()
     category = models.CharField(max_length=255)
     description = models.TextField(default="")
     short_meaning = models.CharField(max_length=255, default="")
