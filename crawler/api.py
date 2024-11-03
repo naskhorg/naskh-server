@@ -16,9 +16,7 @@ def get_all_names(request):
 @router.get("/search", response=List[NameEntitySchema])
 def search_name_by_title(request, title=None):
     try:
-        query = NameEntity.objects.all()
-        if title:
-            query = query.filter(name__icontains=title)[:20]
+        query = NameEntity.objects.filter(name__icontains=title)[:15]
         return [name for name in query]
     except Exception as e:
         print(f"Error while searching: {e}")
